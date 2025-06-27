@@ -18,6 +18,7 @@
 #define CCAPI_REQUEST_OPERATION_TYPE_EXECUTION_MANAGEMENT_ACCOUNT 0x700
 
 namespace ccapi {
+
 /**
  * A single request. Request objects are created using Request constructors. They are used with Session::sendRequest() or Session::sendRequestByWebsocket() or
  * Session::sendRequestByFix(). The Request object contains the parameters for a single request. Once a Request has been created its fields can be further
@@ -27,6 +28,7 @@ namespace ccapi {
 class Request {
  public:
   enum class Operation {
+    UNKNOWN = 0,
     CUSTOM = CCAPI_REQUEST_OPERATION_TYPE_CUSTOM,
     GENERIC_PUBLIC_REQUEST = CCAPI_REQUEST_OPERATION_TYPE_GENERIC_PUBLIC_REQUEST,
     GENERIC_PRIVATE_REQUEST = CCAPI_REQUEST_OPERATION_TYPE_GENERIC_PRIVATE_REQUEST,
@@ -42,6 +44,7 @@ class Request {
     GET_INSTRUMENT,
     GET_INSTRUMENTS,
     GET_BBOS,
+    GET_TICKERS,
     CREATE_ORDER = CCAPI_REQUEST_OPERATION_TYPE_EXECUTION_MANAGEMENT_ORDER,
     CANCEL_ORDER,
     GET_ORDER,
@@ -57,6 +60,9 @@ class Request {
     switch (operation) {
       case Operation::CUSTOM:
         output = "CUSTOM";
+        break;
+      case Operation::UNKNOWN:
+        output = "UNKNOWN";
         break;
       case Operation::GENERIC_PUBLIC_REQUEST:
         output = "GENERIC_PUBLIC_REQUEST";
@@ -100,6 +106,9 @@ class Request {
       case Operation::GET_BBOS:
         output = "GET_BBOS";
         break;
+      case Operation::GET_TICKERS:
+        output = "GET_TICKERS";
+        break;
       case Operation::CREATE_ORDER:
         output = "CREATE_ORDER";
         break;
@@ -125,15 +134,15 @@ class Request {
         output = "GET_ACCOUNT_POSITIONS";
         break;
       default:
-        CCAPI_LOGGER_FATAL(CCAPI_UNSUPPORTED_VALUE);
+        CCAPI_LOGGER_FATAL(std::string(CCAPI_UNSUPPORTED_VALUE) + " " + std::to_string(static_cast<int>(operation)));
     }
     return output;
   }
 
   Request() {}
 
-  Request(Operation operation, const std::string& exchange, const std::string& instrument = "", const std::string& correlationId = "",
-          const std::map<std::string, std::string>& credential = {})
+  explicit Request(Operation operation, const std::string& exchange = "", const std::string& instrument = "", const std::string& correlationId = "",
+                   const std::map<std::string, std::string>& credential = {})
       : operation(operation), exchange(exchange), instrument(instrument), correlationId(correlationId), credential(credential) {
     if (operation == Operation::CUSTOM) {
       this->serviceName = CCAPI_UNKNOWN;
@@ -223,6 +232,10 @@ class Request {
 
   const std::string& getPort() const { return port; }
 
+  void setExchange(const std::string& exchange) { this->exchange = exchange; }
+
+  void setInstrument(const std::string& instrument) { this->instrument = instrument; }
+
   void setIndex(int index) { this->index = index; }
 
   void setCredential(const std::map<std::string, std::string>& credential) { this->credential = credential; }
@@ -258,7 +271,7 @@ class Request {
 
  private:
 #endif
-  Operation operation;
+  Operation operation{Operation::UNKNOWN};
   std::string exchange;
   std::string marginType;
   std::string instrument;
@@ -274,5 +287,6 @@ class Request {
   std::string host;
   std::string port;
 };
+
 } /* namespace ccapi */
 #endif  // INCLUDE_CCAPI_CPP_CCAPI_REQUEST_H_
